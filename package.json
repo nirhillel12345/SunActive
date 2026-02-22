@@ -1,0 +1,37 @@
+{
+  "name": "sunactive",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start -p $PORT",
+    "lint": "next lint",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev --name init",
+    "prisma:seed": "node prisma/seed.js",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down"
+  },
+  "dependencies": {
+    "@prisma/client": "5.0.0",
+    "bcryptjs": "2.4.3",
+    "ioredis": "5.3.2",
+    "next": "13.5.6",
+    "next-auth": "4.22.1",
+    "prisma": "5.0.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "zod": "3.22.2"
+  },
+  "devDependencies": {
+    "@types/node": "20.5.1",
+    "@types/react": "19.2.14",
+    "autoprefixer": "10.4.14",
+    "eslint": "8.49.0",
+    "eslint-config-next": "14.0.0",
+    "postcss": "8.4.22",
+    "tailwindcss": "^3.4.1",
+    "typescript": "5.2.2"
+  }
+}

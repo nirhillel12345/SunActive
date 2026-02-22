@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  username      String   @unique
+  email         String   @unique
+  passwordHash  String
+  role          Role     @default(USER)
+  balancePoints Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  ledgers    Ledger[]
+  adminMints AdminMint[] @relation("AdminMints")
+  userMints  AdminMint[] @relation("UserMints")
+  bets       Bet[] // ✅ opposite relation for Bet.user
+}
+
+model Ledger {
+  id          String     @id @default(cuid())
+  user        User       @relation(fields: [userId], references: [id])
+  userId      String
+  type        LedgerType
+  deltaPoints Int
+  referenceId String?
+  createdAt   DateTime   @default(now())
+
+  @@index([userId]) // (optional, but recommended)
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum LedgerType {
+  MINT
+  BET_PLACE
+  BET_WIN
+  BET_LOSS
+  REFUND
+}
+
+model Market {
+  id              String    @id
+  question        String
+  description     String?
+  category        String?
+  closeTime       DateTime?
+  resolved        Boolean   @default(false)
+  resolvedOutcome Outcome?
+  tokenYesId      String?
+  tokenNoId       String?
+  liquidity       Float?
+  volume          Float?
+  updatedAt       DateTime  @updatedAt
+  createdAt       DateTime  @default(now())
+
+  bets Bet[] // ✅ opposite relation for Bet.market
+}
+
+enum Outcome {
+  YES
+  NO
+}
+
+model AdminMint {
+  id        String   @id @default(cuid())
+  adminId   String
+  userId    String
+  amount    Int
+  note      String?
+  createdAt DateTime @default(now())
+
+  admin User @relation("AdminMints", fields: [adminId], references: [id])
+  user  User @relation("UserMints", fields: [userId], references: [id])
+
+  @@index([adminId]) // (optional, recommended)
+  @@index([userId]) // (optional, recommended)
+}
+
+model Bet {
+  id              String    @id @default(cuid())
+  userId          String
+  marketId        String
+  outcome         Outcome
+  amountStaked    Int
+  priceLocked     Float
+  shares          Float
+  potentialPayout Float
+  status          BetStatus @default(OPEN)
+  createdAt       DateTime  @default(now())
+
+  user   User   @relation(fields: [userId], references: [id])
+  market Market @relation(fields: [marketId], references: [id])
+
+  @@index([userId]) // (optional, recommended)
+  @@index([marketId]) // (optional, recommended)
+}
+
+enum BetStatus {
+  OPEN
+  WON
+  LOST
+}

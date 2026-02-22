@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* allow the document to grow taller than the viewport (don't lock to 100%) */
+html, body, #__next {
+  min-height: 100%;
+}
+
+/* small helper */
+.container { max-width: 72rem; margin: 0 auto; }
+
+/* box sizing and responsive helpers to avoid horizontal overflow */
+*, *::before, *::after { box-sizing: border-box; }
+
+img, video, svg { max-width: 100%; height: auto; display: block; }
+
+/* ensure containers don't exceed viewport on small screens */
+@media (max-width: 420px) {
+  .container { max-width: 100%; padding-left: 0.5rem; padding-right: 0.5rem; }
+}
