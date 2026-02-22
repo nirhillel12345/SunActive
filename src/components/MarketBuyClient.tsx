@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import Button from './ui/Button'
 import Card from './ui/Card'
 import { useToast } from './ui/ToastProvider'
@@ -10,49 +10,50 @@ export default function MarketBuyClient({ market, user }: any) {
   const [amount, setAmount] = useState<number | ''>('')
   const [loading, setLoading] = useState(false)
 
-  const price = useMemo(() => {
-    // Accept liquidity as a number (0..1) or percentage (0..100), or fall back to market.probability
-    
+  // Live prices from WS/Redis
+  const [yesPrice, setYesPrice] = useState<number | null>(null)
+  const [noPrice, setNoPrice] = useState<number | null>(null)
+
+  // Market-derived fallback price (from liquidity or probability)
+  const fallbackPrice = useMemo(() => {
     const raw = market?.liquidity ?? market?.probability ?? undefined
     const n = Number(raw)
     if (!Number.isFinite(n) || n <= 0) return 0.5
 
     let p = n
-    // if value looks like a percent (e.g. 35), convert to 0..1
     if (p > 1) {
       if (p <= 100) p = p / 100
       else return 1
     }
-
-    // clamp to sensible bounds
     p = Math.max(0.01, Math.min(0.99, p))
     return p
   }, [market?.liquidity, market?.probability])
 
-  // Debug: log incoming market values in dev so you can see what's passed in
-  React.useEffect(() => {
-    if (process.env.NODE_ENV !== 'production') {
-      // eslint-disable-next-line no-console
-      console.debug('[MarketBuyClient] market values:', { liquidity: market?.liquidity, probability: market?.probability, computedPrice: price })
-    }
-  }, [market?.liquidity, market?.probability, price])
+  // computed derived price used for the selected outcome (prefer live prices)
+  const selectedPrice = useMemo(() => {
+    const live = outcome === 'YES' ? yesPrice : noPrice
+    return (live ?? fallbackPrice) as number | null
+  }, [yesPrice, noPrice, fallbackPrice, outcome])
 
-  const shares = typeof amount === 'number' && amount > 0 ? amount / price : 0
+  // shares & payout (only when price known)
+  const shares = typeof amount === 'number' && amount > 0 && selectedPrice ? amount / selectedPrice : 0
   const potentialPayout = shares * 1
 
-  const disabled = loading || !amount || amount <= 0 || (user && user.balancePoints < amount)
+  // whether the buy button should be disabled
+  const disabled = loading || !(typeof amount === 'number' && amount > 0) || !selectedPrice
 
+  // confirm buy action
   async function confirmBuy() {
-    if (!amount || amount <= 0) return toast.push({ title: 'Invalid amount', type: 'error' })
+    if (disabled) return
     setLoading(true)
     try {
+      if (!selectedPrice) return toast.push({ title: 'Price unavailable', type: 'error' })
       const res = await fetch('/api/bet', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ marketId: market.id, outcome, amount }) })
       const data = await res.json()
       if (!data.ok) {
         toast.push({ title: 'Bet failed', description: data.error || 'Unknown', type: 'error' })
       } else {
         toast.push({ title: 'Bet placed', description: `Placed ${amount} pts on ${outcome}` })
-        // Optionally, keep the user on the page or redirect; we'll stay and reset inputs
         setAmount('')
       }
     } catch (e) {
@@ -61,6 +62,75 @@ export default function MarketBuyClient({ market, user }: any) {
       setLoading(false)
     }
   }
+
+  // WebSocket connection to internal WS server
+  useEffect(() => {
+    let ws: WebSocket | null = null
+    let closed = false
+    const port = (process.env.NEXT_PUBLIC_WS_PORT as string) || (window.location.port || '4001')
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
+    const host = process.env.NEXT_PUBLIC_WS_URL || `${protocol}://${window.location.hostname}:${port}/ws`
+
+    function connect() {
+      try {
+        ws = new WebSocket(host)
+      } catch (e) {
+        ws = null
+      }
+      if (!ws) return
+
+      ws.onopen = () => {
+        try { ws?.send(JSON.stringify({ type: 'subscribe', marketId: market.id })) } catch (e) {}
+      }
+
+      ws.onmessage = (ev: MessageEvent) => {
+        try {
+          const msg = JSON.parse(ev.data)
+          if ((msg.type === 'snapshot' || msg.type === 'update') && String(msg.marketId) === String(market.id)) {
+            const d = msg.data
+            if (d) {
+              setYesPrice(Number(d.yes))
+              setNoPrice(Number(d.no))
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      ws.onclose = () => {
+        if (closed) return
+        setTimeout(() => connect(), 1000)
+      }
+
+      ws.onerror = () => {
+        // ignore
+      }
+    }
+
+    connect()
+
+    return () => {
+      closed = true
+      try { ws?.send(JSON.stringify({ type: 'unsubscribe', marketId: market.id })) } catch (e) {}
+      try { ws?.close() } catch (e) {}
+    }
+  }, [market?.id])
+
+  // REST fallback to fetch current price once if WS not available yet
+  useEffect(() => {
+    let cancelled = false
+    if (yesPrice == null || noPrice == null) {
+      fetch(`/api/market/${market.id}/price`).then((r) => r.json()).then((data) => {
+        if (cancelled) return
+        if (data.ok && data.data) {
+          setYesPrice(Number(data.data.yes))
+          setNoPrice(Number(data.data.no))
+        }
+      }).catch(() => {})
+    }
+    return () => { cancelled = true }
+  }, [market?.id])
 
   return (
     <Card className="p-4">
@@ -75,7 +145,7 @@ export default function MarketBuyClient({ market, user }: any) {
       </div>
 
       <div className="mb-3 text-sm text-gray-700">
-        <div>Price (locked at purchase): <strong>{(price * 100).toFixed(0)}%</strong></div>
+        <div>Price (locked at purchase): <strong>{selectedPrice ? `${(selectedPrice * 100).toFixed(0)}%` : '—'}</strong></div>
         <div>Shares: <strong>{shares ? shares.toFixed(4) : '0'}</strong></div>
         <div>Potential payout: <strong>{potentialPayout ? potentialPayout.toFixed(2) : '0'}</strong></div>
       </div>

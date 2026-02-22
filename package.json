@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "tsc",
     "start": "next start -p $PORT",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
@@ -16,22 +16,29 @@
   "dependencies": {
     "@prisma/client": "5.0.0",
     "bcryptjs": "2.4.3",
-    "ioredis": "5.3.2",
+    "dotenv": "^17.3.1",
+    "ioredis": "^5.3.2",
     "next": "13.5.6",
     "next-auth": "4.22.1",
+    "node-fetch": "^3.3.2",
     "prisma": "5.0.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
+    "ws": "^8.13.0",
     "zod": "3.22.2"
   },
   "devDependencies": {
-    "@types/node": "20.5.1",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^20.5.1",
+    "@types/node-fetch": "^2.6.13",
     "@types/react": "19.2.14",
+    "@types/ws": "^8.18.1",
     "autoprefixer": "10.4.14",
     "eslint": "8.49.0",
     "eslint-config-next": "14.0.0",
     "postcss": "8.4.22",
     "tailwindcss": "^3.4.1",
-    "typescript": "5.2.2"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.2.2"
   }
 }

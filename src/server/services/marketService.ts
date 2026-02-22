@@ -24,7 +24,9 @@ export async function syncMarkets() {
           resolved: !!m.resolved,
           resolvedOutcome: m.resolvedOutcome ?? null,
           liquidity: typeof m.liquidity === 'number' ? m.liquidity : (m.liquidity ? Number(m.liquidity) : null),
-          volume: typeof m.volume === 'number' ? m.volume : (m.volume ? Number(m.volume) : null)
+          volume: typeof m.volume === 'number' ? m.volume : (m.volume ? Number(m.volume) : null),
+          tokenYesId: m.tokenYesId ?? null,
+          tokenNoId: m.tokenNoId ?? null,
         }
 
         // Upsert by id

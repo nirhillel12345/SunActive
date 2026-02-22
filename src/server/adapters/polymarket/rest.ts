@@ -10,7 +10,7 @@ export async function fetchMarkets(): Promise<any[]> {
   url.searchParams.set('limit', '100')
   url.searchParams.set('order', 'volume')
   url.searchParams.set('ascending', 'false')
-// פקודה שתנקה את הכל בכוח (Force Clear)
+
   try {
     const res = await fetch(url.toString(), { cache: 'no-store' });
     if (!res.ok) throw new Error(`Polymarket API error: ${res.status}`);
@@ -18,13 +18,12 @@ export async function fetchMarkets(): Promise<any[]> {
     if (!Array.isArray(json)) return [];
 
     const allSpecificMarkets = json.flatMap((event: any) => {
-      // 1. סינון ברמת ה-Event (לוודא שהנושא הגדול עדיין פעיל)
+      // 1. סינון ברמת ה-Event
       if (!event.active || event.closed) return [];
       if (!event.markets || !Array.isArray(event.markets)) return [];
 
       return event.markets.flatMap((m: any) => {
-        // 2. סינון ברמת ה-Market הספציפי (חשוב מאוד!)
-        // אנחנו רוצים רק שווקים פתוחים ופעילים
+        // 2. סינון ברמת ה-Market הספציפי
         if (!m.active || m.closed === true) return [];
 
         // 3. בדיקה שמדובר ב-Yes/No (בדיוק 2 תוצאות)
@@ -36,11 +35,21 @@ export async function fetchMarkets(): Promise<any[]> {
         }
         if (outcomeNames.length !== 2) return [];
 
+        // --- חילוץ CLOB Token IDs (Yes/No) ---
+        let tokenYesId: string | null = null;
+        let tokenNoId: string | null = null;
+        try {
+          const clobTokens = typeof m.clobTokenIds === 'string' ? JSON.parse(m.clobTokenIds) : m.clobTokenIds;
+          if (Array.isArray(clobTokens) && clobTokens.length === 2) {
+            tokenYesId = String(clobTokens[0]); // הראשון הוא Yes
+            tokenNoId = String(clobTokens[1]);  // השני הוא No
+          }
+        } catch (e) {
+          console.error(`Failed to parse clobTokenIds for market ${m.id}`);
+        }
+
         // 4. חישוב הסיכוי (Probability)
-        // משתמשים ב-lastTradePrice כעדיפות ראשונה לדיוק מקסימלי
-        // אם אין מסחר אחרון, עוברים ל-outcomePrices (מחיר נוכחי בספר הפקודות)
         let rawPrice: number | null = null;
-        
         if (m.lastTradePrice && Number(m.lastTradePrice) > 0) {
           rawPrice = Number(m.lastTradePrice);
         } else {
@@ -51,7 +60,6 @@ export async function fetchMarkets(): Promise<any[]> {
           } catch (e) {}
         }
 
-        // אם המחיר הוא 0 או 1 בשוק פעיל, זה בדרך כלל אומר שאין נזילות מספקת או שהשוק ממש בקצה
         if (rawPrice === null) return [];
 
         return [{
@@ -61,11 +69,14 @@ export async function fetchMarkets(): Promise<any[]> {
           description: m.description || event.description,
           category: event.category || null,
           closeTime: m.endDate || null,
-          resolved: false, // כי סיננו רק active:true
+          resolved: false,
           liquidity: Number(m.liquidityNum) || Number(m.liquidity) || 0,
           volume: Number(m.volumeNum) || Number(m.volume) || 0,
-          probability: Math.round(rawPrice * 100), // האחוז שיוצג ב-UI
-          rawPrice: rawPrice
+          probability: Math.round(rawPrice * 100),
+          rawPrice: rawPrice,
+          // הוספת הטוקנים לאובייקט המוחזר
+          tokenYesId,
+          tokenNoId
         }];
       });
     });
@@ -74,9 +85,10 @@ export async function fetchMarkets(): Promise<any[]> {
     
     if (allSpecificMarkets.length > 0) {
       console.table(allSpecificMarkets.slice(0, 15).map(m => ({
-        Question: m.question.substring(0, 50),
+        Question: m.question.substring(0, 40),
         'Chance %': m.probability + '%',
-        Volume: `$${Math.floor(m.volume).toLocaleString()}`
+        YesToken: m.tokenYesId?.substring(0, 10) + '...',
+        NoToken: m.tokenNoId?.substring(0, 10) + '...'
       })));
     }
 

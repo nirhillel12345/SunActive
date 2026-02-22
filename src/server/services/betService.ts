@@ -1,69 +1,98 @@
 import { prisma } from '@/server/db/prisma'
+import redis from '@/lib/redis'
+import { Prisma } from '@prisma/client';
+
+function parsePrice(raw: string): { yes: number; no: number } {
+  let obj: any
+  try {
+    obj = JSON.parse(raw)
+  } catch {
+    throw new Error('price parse error')
+  }
+
+  const yes = Number(obj?.yes)
+  const no = Number(obj?.no)
+
+  if (!Number.isFinite(yes) || !Number.isFinite(no)) throw new Error('invalid price data')
+  if (yes <= 0 || yes >= 1 || no <= 0 || no >= 1) throw new Error('invalid price bounds')
+  return { yes, no }
+}
 
 /**
  * Place a bet for a user on a market outcome.
- * All DB changes are done inside a single Prisma transaction.
+ * Locks price from Redis. Client never supplies price.
+ * Uses atomic balance decrement to prevent race conditions.
  */
-export async function placeBet(userId: string, marketId: string, outcome: 'YES' | 'NO', amount: number) {
+export async function placeBet(
+  userId: string,
+  marketId: string,
+  outcome: 'YES' | 'NO',
+  amount: number
+) {
   if (!userId) throw new Error('userId required')
   if (!marketId) throw new Error('marketId required')
-  if (!Number.isFinite(amount) || amount <= 0 || !Number.isInteger(amount)) throw new Error('amount must be a positive integer')
+  if (!Number.isInteger(amount) || amount <= 0) throw new Error('amount must be a positive integer')
 
-  const result = await prisma.$transaction(async (tx: any) => {
-    const user = await tx.user.findUnique({ where: { id: String(userId) } })
-    if (!user) throw new Error('user not found')
+  // Read price snapshot from Redis
+  const raw = await redis.get(`market:${marketId}`)
+  if (!raw) throw new Error('price unavailable')
 
-    const market = await tx.market.findUnique({ where: { id: String(marketId) } })
+  const { yes, no } = parsePrice(raw)
+  const priceLocked = outcome === 'YES' ? yes : no
+
+  const shares = amount / priceLocked
+  const potentialPayout = shares * 1
+
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const market = await tx.market.findUnique({
+      where: { id: String(marketId) },
+      select: { id: true, resolved: true },
+    })
     if (!market) throw new Error('market not found')
     if (market.resolved) throw new Error('market already resolved')
 
-    if (user.balancePoints < amount) throw new Error('insufficient balance')
+    // Atomic decrement only if balancePoints >= amount (prevents concurrent overspend)
+    const dec = await tx.user.updateMany({
+      where: { id: String(userId), balancePoints: { gte: amount } },
+      data: { balancePoints: { decrement: amount } },
+    })
+    if (dec.count !== 1) throw new Error('insufficient balance')
 
-    // derive a price placeholder: use market.liquidity if it's a sensible probability (0..1), else fallback 0.5
-    let price = 0.5
-    if (typeof market.liquidity === 'number' && market.liquidity > 0 && market.liquidity <= 1) {
-      price = market.liquidity
-    }
-
-    // Lock price at time of bet
-    const priceLocked = price
-
-    // shares and potential payout (we treat 1 as full payout per share)
-    const shares = amount / priceLocked
-    const potentialPayout = shares * 1
-
-    // Deduct balance and create bet + ledger
-    const updatedUser = await tx.user.update({ where: { id: user.id }, data: { balancePoints: { decrement: amount } } })
+    const updatedUser = await tx.user.findUnique({
+      where: { id: String(userId) },
+      select: { balancePoints: true },
+    })
+    if (!updatedUser) throw new Error('user not found')
 
     const bet = await tx.bet.create({
       data: {
-        userId: user.id,
+        userId: String(userId),
         marketId: market.id,
-        outcome: outcome,
+        outcome: outcome as any,
         amountStaked: amount,
         priceLocked,
         shares,
         potentialPayout,
-        status: 'OPEN'
-      }
+        status: 'OPEN',
+      },
+      select: { id: true },
     })
 
     await tx.ledger.create({
       data: {
-        userId: user.id,
+        userId: String(userId),
         type: 'BET_PLACE',
         deltaPoints: -amount,
-        referenceId: bet.id
-      }
+        referenceId: bet.id,
+      },
     })
 
     return {
       betId: bet.id,
       shares,
       potentialPayout,
-      newBalance: updatedUser.balancePoints
+      priceLocked,
+      newBalance: updatedUser.balancePoints,
     }
   })
-
-  return result
 }
