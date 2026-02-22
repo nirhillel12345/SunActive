@@ -1,12 +1,12 @@
 import React from 'react'
-import { prisma } from '@/server/db/prisma'
+import { getMarketWithPrice } from '@/server/services/marketWithPrices'
 import MarketBuyClient from '@/components/MarketBuyClient'
 import getSession from '@/server/auth/getSession'
 import Card from '@/components/ui/Card'
 
 export default async function MarketPage({ params }: { params: { id: string } }) {
   const { id } = params
-  const market = await prisma.market.findUnique({ where: { id } })
+  const market = await getMarketWithPrice(id)
   if (!market) return <div className="p-6">Market not found</div>
 
   const session = await getSession()
@@ -23,14 +23,14 @@ export default async function MarketPage({ params }: { params: { id: string } })
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <div className="md:col-span-2">
           <Card>
-            <div className="text-sm text-gray-500">Liquidity</div>
-            <div className="text-lg font-semibold">{market.liquidity ?? '-'} </div>
-            <div className="text-sm text-gray-500 mt-2">Volume: {market.volume ?? 0}</div>
+            <div className="text-sm text-gray-500">Volume</div>
+            <div className="text-lg font-semibold">{market.volume ?? '-'} </div>
+            <div className="text-sm text-gray-500 mt-2">Updated: {market.updatedAt ? new Date(market.updatedAt).toLocaleString() : '-'}</div>
           </Card>
         </div>
-    
+
         <div>
-          <MarketBuyClient market={market} user={user} />
+          <MarketBuyClient market={market} user={user} initialPrices={{ yes: market.yesPrice, no: market.noPrice }} />
         </div>
       </div>
     </div>

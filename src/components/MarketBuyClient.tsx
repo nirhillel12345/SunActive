@@ -4,22 +4,22 @@ import Button from './ui/Button'
 import Card from './ui/Card'
 import { useToast } from './ui/ToastProvider'
 
-export default function MarketBuyClient({ market, user }: any) {
+export default function MarketBuyClient({ market, user, initialPrices }: any) {
   const toast = useToast()
   const [outcome, setOutcome] = useState<'YES' | 'NO'>('YES')
   const [amount, setAmount] = useState<number | ''>('')
   const [loading, setLoading] = useState(false)
 
   // Live prices from WS/Redis
-  const [yesPrice, setYesPrice] = useState<number | null>(null)
-  const [noPrice, setNoPrice] = useState<number | null>(null)
+  const [yesPrice, setYesPrice] = useState<number | null>(initialPrices?.yes ?? null)
+  const [noPrice, setNoPrice] = useState<number | null>(initialPrices?.no ?? null)
 
   // Market-derived fallback price (from liquidity or probability)
   const fallbackPrice = useMemo(() => {
-    const raw = market?.liquidity ?? market?.probability ?? undefined
+    // DB should not store prices; if there's a probability field it may be present from older runs.
+    const raw = market?.probability ?? undefined
     const n = Number(raw)
     if (!Number.isFinite(n) || n <= 0) return 0.5
-
     let p = n
     if (p > 1) {
       if (p <= 100) p = p / 100
@@ -27,7 +27,7 @@ export default function MarketBuyClient({ market, user }: any) {
     }
     p = Math.max(0.01, Math.min(0.99, p))
     return p
-  }, [market?.liquidity, market?.probability])
+  }, [market?.probability])
 
   // computed derived price used for the selected outcome (prefer live prices)
   const selectedPrice = useMemo(() => {

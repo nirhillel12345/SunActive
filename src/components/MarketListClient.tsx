@@ -9,10 +9,12 @@ import Skeleton from './ui/Skeleton'
 
 type Market = {
   id: string
-  question: string
+  question?: string | null
   category?: string | null
   resolved?: boolean
-  liquidity?: number | null
+  yesPrice?: number | null
+  noPrice?: number | null
+  probability?: number | null
   volume?: number | null
   updatedAt?: string
 }
@@ -34,7 +36,8 @@ export default function MarketListClient({ initialMarkets }: { initialMarkets: M
     return initialMarkets.filter((m) => {
       if (openOnly && m.resolved) return false
       if (category && m.category !== category) return false
-      if (query && !m.question.toLowerCase().includes(query.toLowerCase())) return false
+      const q = (m.question ?? '')
+      if (query && !q.toLowerCase().includes(query.toLowerCase())) return false
       return true
     })
   }, [initialMarkets, query, openOnly, category])
@@ -83,7 +86,7 @@ export default function MarketListClient({ initialMarkets }: { initialMarkets: M
         // mobile-first responsive grid: 1 / 2 / 3 / 4
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 w-full">
           {filtered.map((m) => (
-            <MarketCard key={m.id} market={{ id: m.id, title: m.question, question: m.question, category: m.category, resolved: m.resolved, volume: m.volume ?? 0, liquidity: m.liquidity ?? 0, probability:  Math.round((m.liquidity ?? 0) % 100) }} />
+            <MarketCard key={m.id} market={{ id: m.id, question: m.question ?? undefined, category: m.category, resolved: m.resolved, volume: m.volume ?? 0, yesPrice: m.yesPrice ?? null, noPrice: m.noPrice ?? null, probability: m.probability ?? null }} />
           ))}
         </div>
       )}

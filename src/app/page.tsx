@@ -1,5 +1,5 @@
 import getSession from '@/server/auth/getSession'
-import { prisma } from '@/server/db/prisma'
+import { getMarketsWithPrices } from '@/server/services/marketWithPrices'
 
 import MarketListClient from '../components/MarketListClient'
 
@@ -7,7 +7,7 @@ export default async function Home() {
   const session = await getSession()
   const userRole = (session as any)?.user?.role ?? null
 
-  const markets = await prisma.market.findMany({ orderBy: { updatedAt: 'desc' }, take: 200, select: { id: true, question: true, category: true, resolved: true, liquidity: true, volume: true, updatedAt: true } })
+  const markets = await getMarketsWithPrices({ take: 200 })
 
   return (
     <div>
