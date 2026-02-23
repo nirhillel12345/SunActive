@@ -50,6 +50,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     <li><a href="/admin/markets" className="block p-2 rounded hover:bg-gray-100">Markets</a></li>
                   </>
                 )}
+                {user && user.role === 'AGENT' && (
+                  <>
+                    <li className="font-semibold text-sm text-gray-500 mt-4">Agent</li>
+                    <li><a href="/agent" className="block p-2 rounded hover:bg-gray-100">Dashboard</a></li>
+                    <li><a href="/agent/players" className="block p-2 rounded hover:bg-gray-100">Players</a></li>
+                  </>
+                )}
               </ul>
             </nav>
           </aside>

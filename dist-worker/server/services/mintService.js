@@ -20,14 +20,16 @@ async function mintPoints(adminId, userId, amount, note) {
         if (!admin || admin.role !== 'ADMIN')
             throw new Error('unauthorized');
         // ensure recipient exists
-        const recipient = await tx.user.findUnique({ where: { id: userId }, select: { id: true, balancePoints: true } });
+        const recipient = await tx.user.findUnique({ where: { id: userId }, select: { id: true, role: true, balancePoints: true } });
         if (!recipient)
             throw new Error('recipient not found');
-        // create AdminMint record
+        // create AdminMint record (audit)
         const adminMint = await tx.adminMint.create({ data: { adminId, userId, amount, note } });
-        // create Ledger entry referencing the adminMint
-        await tx.ledger.create({ data: { userId, type: 'MINT', deltaPoints: amount, referenceId: adminMint.id } });
-        // update user balance
+        // determine ledger type
+        const ledgerType = recipient.role === 'AGENT' ? 'ADMIN_MINT_TO_AGENT' : 'ADMIN_MINT_TO_USER';
+        // create Ledger entry for the recipient (actor = admin)
+        await tx.ledger.create({ data: { actorId: adminId, targetUserId: userId, type: ledgerType, deltaPoints: amount, referenceId: adminMint.id } });
+        // update recipient balance
         const updated = await tx.user.update({ where: { id: userId }, data: { balancePoints: { increment: amount } }, select: { balancePoints: true } });
         return updated.balancePoints;
     });

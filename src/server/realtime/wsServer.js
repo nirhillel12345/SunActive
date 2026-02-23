@@ -163,11 +163,11 @@ if (require.main === module) {
         try {
             await sub.quit();
         }
-        catch { }
+        catch { console.warn('Failed to quit Redis subscription connection gracefully'); }
         try {
             await redis.quit();
         }
-        catch { }
+        catch { console.warn('Failed to quit Redis connection gracefully'); }
         process.exit(0);
     });
 }

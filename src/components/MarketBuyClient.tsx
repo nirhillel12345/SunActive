@@ -73,6 +73,7 @@ export default function MarketBuyClient({ market, user, initialPrices }: any) {
 
     function connect() {
       try {
+        console.log(`Connecting to WS server at ${host} for market ${market.id} price updates`)
         ws = new WebSocket(host)
       } catch (e) {
         ws = null

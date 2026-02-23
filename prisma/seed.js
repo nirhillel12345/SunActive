@@ -8,17 +8,23 @@ async function main() {
   const adminUser = process.env.SEED_ADMIN_USERNAME || 'admin'
   const adminPass = process.env.SEED_ADMIN_PASSWORD || 'password123'
 
-  const userEmail = process.env.SEED_USER_EMAIL || 'user@example.com'
-  const userName = process.env.SEED_USER_USERNAME || 'user'
-  const userPass = process.env.SEED_USER_PASSWORD || 'password123'
-  const adminHash = await bcrypt.hash(adminPass, 10)
-  const userHash = await bcrypt.hash(userPass, 10)
+  const agentEmail = process.env.SEED_AGENT_EMAIL || 'agent@example.com'
+  const agentUser = process.env.SEED_AGENT_USERNAME || 'agent'
+  const agentPass = process.env.SEED_AGENT_PASSWORD || 'agentpass'
 
-  console.log('Seeding admin and user...')
+  const playerEmail = process.env.SEED_PLAYER_EMAIL || 'player@example.com'
+  const playerUser = process.env.SEED_PLAYER_USERNAME || 'player'
+  const playerPass = process.env.SEED_PLAYER_PASSWORD || 'playerpass'
+
+  const adminHash = await bcrypt.hash(adminPass, 10)
+  const agentHash = await bcrypt.hash(agentPass, 10)
+  const playerHash = await bcrypt.hash(playerPass, 10)
+
+  console.log('Seeding admin, agent and player...')
 
   await prisma.$transaction(async (tx) => {
-    // upsert admin
-    await tx.user.upsert({
+    // Upsert admin (central bank)
+    const admin = await tx.user.upsert({
       where: { email: adminEmail },
       update: {},
       create: {
@@ -26,21 +32,46 @@ async function main() {
         email: adminEmail,
         passwordHash: adminHash,
         role: 'ADMIN',
+        balancePoints: 100000
+      }
+    })
+
+    // Upsert agent (distributor)
+    const agent = await tx.user.upsert({
+      where: { email: agentEmail },
+      update: {},
+      create: {
+        username: agentUser,
+        email: agentEmail,
+        passwordHash: agentHash,
+        role: 'AGENT',
         balancePoints: 1000
       }
     })
 
-    await tx.user.upsert({
-      where: { email: userEmail },
+    // Upsert player and associate with agent
+    const player = await tx.user.upsert({
+      where: { email: playerEmail },
       update: {},
       create: {
-        username: userName,
-        email: userEmail,
-        passwordHash: userHash,
+        username: playerUser,
+        email: playerEmail,
+        passwordHash: playerHash,
         role: 'USER',
-        balancePoints: 100
+        balancePoints: 100,
+        agentId: agent.id
       }
     })
+
+    // Create ledger entries that reflect the above balances.
+    // These ledger rows make the ledger consistent with the current balances so the ledger is a truthful audit trail.
+    // Note: if you run migrations and regenerate Prisma client, you can remove any `as any` casts if required.
+
+    // Admin -> Agent (initial top-up)
+    await tx.ledger.create({ data: { actorId: admin.id, targetUserId: agent.id, type: 'ADMIN_MINT_TO_AGENT', deltaPoints: agent.balancePoints, referenceId: null } })
+
+    // Agent -> Player (agent funded the player)
+    await tx.ledger.create({ data: { actorId: agent.id, targetUserId: player.id, type: 'AGENT_MINT_TO_USER', deltaPoints: player.balancePoints, referenceId: null } })
   })
 
   console.log('Seeding complete.')

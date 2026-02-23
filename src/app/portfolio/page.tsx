@@ -13,7 +13,7 @@ export default async function Portfolio() {
   const user = (await prisma.user.findUnique({ where: { id: userId } })) as any
   if (!user) return <div className="text-center p-8">User not found</div>
 
-  const ledgers = await (prisma as any).ledger.findMany({ where: { userId }, orderBy: { createdAt: 'desc' }, take: 50 }) as any[]
+  const ledgers = await (prisma as any).ledger.findMany({ where: { OR: [{ actorId: userId }, { targetUserId: userId }] }, orderBy: { createdAt: 'desc' }, take: 50 }) as any[]
   const openBets = await (prisma as any).bet.findMany({ where: { userId, status: 'OPEN' }, include: { market: true }, orderBy: { createdAt: 'desc' } }) as any[]
 
   return (

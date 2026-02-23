@@ -10,7 +10,7 @@ export async function GET(req: Request) {
 
   const [user, ledgers] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId }, select: { id: true, username: true, balancePoints: true } }),
-    prisma.ledger.findMany({ where: { userId }, orderBy: { createdAt: 'desc' }, take: 50 })
+    prisma.ledger.findMany({ where: { OR: [{ actorId: userId }, { targetUserId: userId }] }, orderBy: { createdAt: 'desc' }, take: 50 })
   ])
 
   if (!user) return NextResponse.json({ ok: false, error: 'User not found' }, { status: 404 })

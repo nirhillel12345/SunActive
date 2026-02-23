@@ -20,6 +20,13 @@ export default function MobileNav({ user }: { user: { id: string; username?: str
               <a href="/admin/markets" className="block p-3 rounded touch-manipulation hover:bg-gray-100">Markets</a>
             </>
           )}
+          {user && user.role === 'AGENT' && (
+            <>
+              <div className="font-semibold text-sm text-gray-500">Agent</div>
+              <a href="/agent" className="block p-3 rounded touch-manipulation hover:bg-gray-100">Dashboard</a>
+              <a href="/agent/players" className="block p-3 rounded touch-manipulation hover:bg-gray-100">Players</a>
+            </>
+          )}
         </div>
       </Drawer>
     </>

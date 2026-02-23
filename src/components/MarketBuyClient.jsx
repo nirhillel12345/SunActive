@@ -80,6 +80,7 @@ export default function MarketBuyClient({ market, user }) {
                 return;
             ws.onopen = () => {
                 try {
+                    console.log(`Subscribed to market ${market.id} price updates via WS`);
                     ws?.send(JSON.stringify({ type: 'subscribe', marketId: market.id }));
                 }
                 catch (e) { }

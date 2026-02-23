@@ -8,43 +8,63 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(cuid())
-  username      String   @unique
-  email         String   @unique
-  passwordHash  String
-  role          Role     @default(USER)
+  id           String @id @default(cuid())
+  username     String @unique
+  email        String @unique
+  passwordHash String
+  role         Role   @default(USER)
+
+  // Agent -> Players (self relation)
+  agentId String?
+  agent   User?   @relation("AgentPlayers", fields: [agentId], references: [id])
+  players User[]  @relation("AgentPlayers")
+
   balancePoints Int      @default(0)
   createdAt     DateTime @default(now())
 
-  ledgers    Ledger[]
-  adminMints AdminMint[] @relation("AdminMints")
-  userMints  AdminMint[] @relation("UserMints")
-  bets       Bet[] // ✅ opposite relation for Bet.user
+  // Ledger relations (actor / target)
+  actedLedgers  Ledger[] @relation("LedgerActor")
+  targetLedgers Ledger[] @relation("LedgerTarget")
+
+  // AdminMint relations
+  adminMints AdminMint[] @relation("AdminMints") // as admin (issuer)
+  userMints  AdminMint[] @relation("UserMints") // as user (recipient)
+
+  bets Bet[]
 }
 
 model Ledger {
-  id          String     @id @default(cuid())
-  user        User       @relation(fields: [userId], references: [id])
-  userId      String
+  id String @id @default(cuid())
+
+  actor   User   @relation("LedgerActor", fields: [actorId], references: [id])
+  actorId String
+
+  targetUser   User   @relation("LedgerTarget", fields: [targetUserId], references: [id])
+  targetUserId String
+
   type        LedgerType
   deltaPoints Int
   referenceId String?
   createdAt   DateTime   @default(now())
 
-  @@index([userId]) // (optional, but recommended)
+  @@index([actorId])
+  @@index([targetUserId])
 }
 
 enum Role {
   ADMIN
+  AGENT
   USER
 }
 
 enum LedgerType {
-  MINT
+  ADMIN_MINT_TO_AGENT
+  ADMIN_MINT_TO_USER
+  AGENT_MINT_TO_USER
+  AGENT_DEDUCT_FROM_USER
   BET_PLACE
   BET_WIN
   BET_LOSS
-  REFUND
 }
 
 model Market {
@@ -61,8 +81,9 @@ model Market {
   volume          Float?
   updatedAt       DateTime  @updatedAt
   createdAt       DateTime  @default(now())
-  imageUrl        String? 
-  bets Bet[] // ✅ opposite relation for Bet.market
+  imageUrl        String?
+
+  bets Bet[]
 }
 
 enum Outcome {
@@ -71,9 +92,11 @@ enum Outcome {
 }
 
 model AdminMint {
-  id        String   @id @default(cuid())
-  adminId   String
-  userId    String
+  id String @id @default(cuid())
+
+  adminId String
+  userId  String
+
   amount    Int
   note      String?
   createdAt DateTime @default(now())
@@ -81,8 +104,8 @@ model AdminMint {
   admin User @relation("AdminMints", fields: [adminId], references: [id])
   user  User @relation("UserMints", fields: [userId], references: [id])
 
-  @@index([adminId]) // (optional, recommended)
-  @@index([userId]) // (optional, recommended)
+  @@index([adminId])
+  @@index([userId])
 }
 
 model Bet {
@@ -100,8 +123,8 @@ model Bet {
   user   User   @relation(fields: [userId], references: [id])
   market Market @relation(fields: [marketId], references: [id])
 
-  @@index([userId]) // (optional, recommended)
-  @@index([marketId]) // (optional, recommended)
+  @@index([userId])
+  @@index([marketId])
 }
 
 enum BetStatus {

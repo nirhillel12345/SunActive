@@ -78,14 +78,7 @@ export async function placeBet(
       select: { id: true },
     })
 
-    await tx.ledger.create({
-      data: {
-        userId: String(userId),
-        type: 'BET_PLACE',
-        deltaPoints: -amount,
-        referenceId: bet.id,
-      },
-    })
+    await tx.ledger.create({ data: { actorId: String(userId), targetUserId: String(userId), type: 'BET_PLACE', deltaPoints: -amount, referenceId: bet.id } as any })
 
     return {
       betId: bet.id,

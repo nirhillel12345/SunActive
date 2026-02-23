@@ -25,7 +25,6 @@ export default function MarketCard({ market }: { market: Market }) {
     probability,
     imageUrl,
   } = market
-  console.log("Rendering MarketCard for market", market.id, "with yesPrice", yesPrice, "noPrice", noPrice, "probability", probability)
   const percent =
     probability != null
       ? Math.round(probability)
