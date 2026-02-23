@@ -22,8 +22,8 @@ export async function mintPoints(adminId, userId, amount, note) {
             throw new Error('recipient not found');
         // create AdminMint record
         const adminMint = await tx.adminMint.create({ data: { adminId, userId, amount, note } });
-        // create Ledger entry referencing the adminMint
-        await tx.ledger.create({ data: { userId, type: 'MINT', deltaPoints: amount, referenceId: adminMint.id } });
+    // create Ledger entry referencing the adminMint
+    await tx.ledger.create({ data: { actorId: adminId, targetUserId: userId, type: 'ADMIN_MINT_TO_USER', deltaPoints: amount, referenceId: adminMint.id } });
         // update user balance
         const updated = await tx.user.update({ where: { id: userId }, data: { balancePoints: { increment: amount } }, select: { balancePoints: true } });
         return updated.balancePoints;

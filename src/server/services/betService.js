@@ -73,7 +73,8 @@ export async function placeBet(userId, marketId, outcome, amount) {
         });
         await tx.ledger.create({
             data: {
-                userId: String(userId),
+                actorId: String(userId),
+                targetUserId: String(userId),
                 type: 'BET_PLACE',
                 deltaPoints: -amount,
                 referenceId: bet.id,
