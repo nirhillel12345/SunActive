@@ -51,6 +51,9 @@ async function fetchMarkets() {
                 catch (e) {
                     console.error(`Failed to parse clobTokenIds for market ${m.id}`);
                 }
+                // --- חילוץ תמונה (Image) ---
+                // לוקחים את התמונה של המרקט, ואם אין - את התמונה של האירוע הכללי
+                const image = m.image || event.image || m.icon || event.icon || null;
                 // 4. חישוב הסיכוי (Probability)
                 let rawPrice = null;
                 if (m.lastTradePrice && Number(m.lastTradePrice) > 0) {
@@ -73,13 +76,13 @@ async function fetchMarkets() {
                         question: m.question || event.title,
                         description: m.description || event.description,
                         category: event.category || null,
+                        imageUrl: image,
                         closeTime: m.endDate || null,
                         resolved: false,
                         liquidity: Number(m.liquidityNum) || Number(m.liquidity) || 0,
                         volume: Number(m.volumeNum) || Number(m.volume) || 0,
                         probability: Math.round(rawPrice * 100),
                         rawPrice: rawPrice,
-                        // הוספת הטוקנים לאובייקט המוחזר
                         tokenYesId,
                         tokenNoId
                     }];
@@ -88,10 +91,11 @@ async function fetchMarkets() {
         console.log(`\n🚀 Real-Time Sync: Found ${allSpecificMarkets.length} active Yes/No markets.`);
         if (allSpecificMarkets.length > 0) {
             console.table(allSpecificMarkets.slice(0, 15).map(m => ({
-                Question: m.question.substring(0, 40),
+                Question: m.question.substring(0, 30) + '...',
                 'Chance %': m.probability + '%',
-                YesToken: m.tokenYesId?.substring(0, 10) + '...',
-                NoToken: m.tokenNoId?.substring(0, 10) + '...'
+                HasImage: !!m.imageUrl,
+                YesToken: m.tokenYesId?.substring(0, 8) + '...',
+                NoToken: m.tokenNoId?.substring(0, 8) + '...'
             })));
         }
         return allSpecificMarkets;
