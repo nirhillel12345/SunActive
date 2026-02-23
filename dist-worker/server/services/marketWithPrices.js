@@ -73,6 +73,7 @@ async function getMarketWithPrice(id) {
         resolved: !!m.resolved,
         updatedAt: m.updatedAt ?? null,
         yesPrice: yes,
+        imageUrl: m.imageUrl ?? null,
         noPrice: no,
         probability,
     };

@@ -1,5 +1,6 @@
 import { prisma } from '@/server/db/prisma'
 import { redis, snapshotKey } from '@/server/redis'
+import { imageConfigDefault } from 'next/dist/shared/lib/image-config'
 
 type MarketDTO = {
   id: string
@@ -66,7 +67,7 @@ export async function getMarketsWithPrices(opts?: { take?: number }) {
 export type { MarketDTO }
 
 export async function getMarketWithPrice(id: string) {
-  const m = await prisma.market.findUnique({ select: { id: true, question: true, category: true, resolved: true, volume: true, updatedAt: true }, where: { id } })
+  const m = await prisma.market.findUnique({ select: { id: true, question: true, category: true, resolved: true, volume: true, updatedAt: true, imageUrl: true }, where: { id } })
   if (!m) return null
 
   const raw = await redis.get(snapshotKey(id))
@@ -90,6 +91,7 @@ export async function getMarketWithPrice(id: string) {
     resolved: !!m.resolved,
     updatedAt: m.updatedAt ?? null,
     yesPrice: yes,
+    imageUrl: m.imageUrl ?? null,
     noPrice: no,
     probability,
   }
