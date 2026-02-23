@@ -7,7 +7,7 @@ import { useToast } from '@/components/ui/ToastProvider'
 
 type Agent = { id: string; username: string; email: string; balancePoints: number; createdAt: string }
 
-export default function CreateAgentForm({ onCreated }: { onCreated: (agent: Agent) => void }) {
+export default function CreateAgentForm({ onCreated, onCancel }: { onCreated: (agent: Agent) => void; onCancel?: () => void }) {
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -42,7 +42,7 @@ export default function CreateAgentForm({ onCreated }: { onCreated: (agent: Agen
         <Input label="Initial balance" type="number" value={initialBalance} onChange={(e) => setInitialBalance(Number(e.target.value))} />
       </div>
       <div className="flex justify-end gap-2 mt-3">
-        <Button variant="secondary" onClick={() => { /* parent modal will handle close */ }}>Cancel</Button>
+  <Button variant="secondary" onClick={() => onCancel?.()}>Cancel</Button>
         <Button variant="primary" onClick={submit} disabled={loading}>{loading ? 'Creating…' : 'Create Agent'}</Button>
       </div>
     </div>

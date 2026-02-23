@@ -120,7 +120,7 @@ export default function AgentDashboardClient({ initialAgent, initialPlayers, ini
 
       <Modal open={creating} onClose={() => setCreating(false)}>
         <h3 className="text-lg font-semibold mb-2">Create player</h3>
-        <CreatePlayerForm onCreated={(u: any, agentBalance?: number) => { onPlayerCreated(u, undefined, agentBalance); setCreating(false) }} />
+  <CreatePlayerForm onCreated={(u: any, agentBalance?: number) => { onPlayerCreated(u, undefined, agentBalance); setCreating(false) }} onCancel={() => setCreating(false)} />
       </Modal>
     </div>
   )

@@ -8,7 +8,7 @@ import { useToast } from '@/components/ui/ToastProvider'
 
 type Player = { id: string; username: string; email: string; balancePoints: number }
 
-export default function CreatePlayerForm({ onCreated }: { onCreated: (user: Player, updatedAgentBalance?: number) => void }) {
+export default function CreatePlayerForm({ onCreated, onCancel }: { onCreated: (user: Player, updatedAgentBalance?: number) => void; onCancel?: () => void }) {
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -65,7 +65,7 @@ export default function CreatePlayerForm({ onCreated }: { onCreated: (user: Play
         <Input label="Initial points (optional)" type="number" value={initialPoints} onChange={(e) => setInitialPoints(Number(e.target.value))} />
       </div>
       <div className="flex justify-end gap-2 mt-3">
-        <Button variant="secondary" onClick={() => { /* modal will handle close */ }} >Cancel</Button>
+  <Button variant="secondary" onClick={() => onCancel?.()} >Cancel</Button>
         <Button variant="primary" onClick={submit} disabled={loading}>{loading ? 'Creating…' : 'Create'}</Button>
       </div>
     </div>

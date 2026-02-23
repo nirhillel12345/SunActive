@@ -107,7 +107,7 @@ export default function AdminAgentsClient({ initialAgents }: { initialAgents: Ag
 
       <Modal open={creating} onClose={() => setCreating(false)}>
         <h3 className="text-lg font-semibold mb-2">Create Agent</h3>
-        <CreateAgentForm onCreated={handleCreated} />
+  <CreateAgentForm onCreated={handleCreated} onCancel={() => setCreating(false)} />
       </Modal>
     </div>
   )
