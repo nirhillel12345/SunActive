@@ -16,6 +16,7 @@ export default function MobileNav({ user }: { user: { id: string; username?: str
             <>
               <div className="font-semibold text-sm text-gray-500">Admin</div>
               <a href="/admin" className="block p-3 rounded touch-manipulation hover:bg-gray-100">Dashboard</a>
+              <a href="/admin/agents" className="block p-3 rounded touch-manipulation hover:bg-gray-100">Agents</a>
               <a href="/admin/users" className="block p-3 rounded touch-manipulation hover:bg-gray-100">Users</a>
               <a href="/admin/markets" className="block p-3 rounded touch-manipulation hover:bg-gray-100">Markets</a>
             </>

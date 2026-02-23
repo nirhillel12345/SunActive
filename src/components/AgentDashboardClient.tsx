@@ -34,6 +34,14 @@ export default function AgentDashboardClient({ initialAgent, initialPlayers, ini
     setAgent((a) => ({ ...a, balancePoints: newBalance }))
   }
 
+  function formatDateIso(dateStr: string) {
+    try {
+      return new Date(dateStr).toISOString().replace('T', ' ').replace('Z', ' UTC')
+    } catch (e) {
+      return dateStr
+    }
+  }
+
   return (
     <div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -101,7 +109,7 @@ export default function AgentDashboardClient({ initialAgent, initialPlayers, ini
           {ledgers.map((l) => (
             <div key={l.id} className="p-3 border rounded flex items-start justify-between">
               <div>
-                <div className="text-sm text-gray-600">{new Date(l.createdAt).toLocaleString()}</div>
+                <div className="text-sm text-gray-600">{formatDateIso(l.createdAt)}</div>
                 <div className="font-medium">{l.type} — {l.deltaPoints > 0 ? '+' : ''}{l.deltaPoints}</div>
               </div>
               <div className={`text-sm font-semibold ${l.deltaPoints > 0 ? 'text-green-600' : 'text-red-600'}`}>{l.deltaPoints > 0 ? `+${l.deltaPoints}` : l.deltaPoints}</div>

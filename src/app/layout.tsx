@@ -46,6 +46,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   <>
                     <li className="font-semibold text-sm text-gray-500 mt-4">Admin</li>
                     <li><a href="/admin" className="block p-2 rounded hover:bg-gray-100">Dashboard</a></li>
+                    <li><a href="/admin/agents" className="block p-2 rounded hover:bg-gray-100">Agents</a></li>
                     <li><a href="/admin/users" className="block p-2 rounded hover:bg-gray-100">Users</a></li>
                     <li><a href="/admin/markets" className="block p-2 rounded hover:bg-gray-100">Markets</a></li>
                   </>
