@@ -50,7 +50,7 @@ async function getMarketsWithPrices(opts) {
 }
 exports.getMarketsWithPrices = getMarketsWithPrices;
 async function getMarketWithPrice(id) {
-    const m = await prisma_1.prisma.market.findUnique({ select: { id: true, question: true, category: true, resolved: true, volume: true, updatedAt: true }, where: { id } });
+    const m = await prisma_1.prisma.market.findUnique({ select: { id: true, question: true, category: true, resolved: true, volume: true, updatedAt: true, imageUrl: true }, where: { id } });
     if (!m)
         return null;
     const raw = await redis_1.redis.get((0, redis_1.snapshotKey)(id));

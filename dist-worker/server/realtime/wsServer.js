@@ -72,7 +72,9 @@ function removeClient(marketId, ws) {
     if (set.size === 0)
         subscriptions.delete(marketId);
 }
+console.log('Starting WebSocket server...');
 wss.on('connection', (ws) => {
+    console.log('New WebSocket connection');
     ws.subscribedMarketIds = new Set();
     ws.isAlive = true;
     ws.on('pong', () => {
@@ -164,7 +166,7 @@ const heartbeat = setInterval(() => {
     });
 }, 30000);
 wss.on('close', () => clearInterval(heartbeat));
-console.log(`[wsServer] running on ws://0.0.0.0:${WS_PORT}/ws`);
+console.log(`[wsServer] runningq on ws://0.0.0.0:${WS_PORT}/ws`);
 if (require.main === module) {
     process.on('SIGINT', async () => {
         try {

@@ -157,7 +157,7 @@ const heartbeat = setInterval(() => {
     });
 }, 30000);
 wss.on('close', () => clearInterval(heartbeat));
-console.log(`[wsServer] running on ws://0.0.0.0:${WS_PORT}/ws`);
+console.log(`[wsServer] runnings on ws://0.0.0.0:${WS_PORT}/ws`);
 if (require.main === module) {
     process.on('SIGINT', async () => {
         try {

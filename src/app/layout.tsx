@@ -69,10 +69,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <MobileNav user={user} />
                 <a href="/" className="text-lg font-bold">SunActive</a>
                 <div className="hidden sm:block">
-                  <div className="relative">
-                    {/* responsive width to avoid overflow on smaller desktops */}
-                    <input placeholder="Search markets..." className="border rounded px-3 py-1 max-w-[260px] w-full" />
-                  </div>
                 </div>
               </div>
 

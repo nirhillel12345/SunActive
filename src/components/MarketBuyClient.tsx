@@ -216,7 +216,12 @@ export default function MarketBuyClient({ market, user, initialPrices }: any) {
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-xs text-gray-500">February 23</div>
+          <div className="text-xs text-gray-500">
+          {new Date().toLocaleDateString("en-US", {
+            month: "long",
+            day: "numeric",
+          })}
+         </div>
           <div className="mt-1 flex items-center gap-2">
             <button
               type="button"
