@@ -16,6 +16,7 @@ type Market = {
   noPrice?: number | null
   probability?: number | null
   volume?: number | null
+  imageUrl?: string | null
   updatedAt?: string
 }
 
@@ -25,7 +26,6 @@ export default function MarketListClient({ initialMarkets }: { initialMarkets: M
   const [category, setCategory] = useState('')
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [loading] = useState(false)
-
   const categories = useMemo(() => {
     const set = new Set<string>()
     initialMarkets.forEach((m) => { if (m.category) set.add(m.category) })
@@ -86,7 +86,7 @@ export default function MarketListClient({ initialMarkets }: { initialMarkets: M
         // mobile-first responsive grid: 1 / 2 / 3 / 4
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 w-full">
           {filtered.map((m) => (
-            <MarketCard key={m.id} market={{ id: m.id, question: m.question ?? undefined, category: m.category, resolved: m.resolved, volume: m.volume ?? 0, yesPrice: m.yesPrice ?? null, noPrice: m.noPrice ?? null, probability: m.probability ?? null }} />
+            <MarketCard key={m.id} market={{ id: m.id, question: m.question ?? undefined, category: m.category, resolved: m.resolved, volume: m.volume ?? 0, yesPrice: m.yesPrice ?? null, noPrice: m.noPrice ?? null, probability: m.probability ?? null, imageUrl: m.imageUrl ?? null }} />
           ))}
         </div>
       )}

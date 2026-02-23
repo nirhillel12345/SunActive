@@ -23,7 +23,7 @@ export async function getMarketsWithPrices(opts?: { take?: number }) {
   const markets = await prisma.market.findMany({
     orderBy: { updatedAt: 'desc' },
     take,
-    select: { id: true, question: true, category: true, resolved: true, volume: true, updatedAt: true },
+    select: { id: true, question: true, category: true, resolved: true, volume: true, updatedAt: true, imageUrl: true },
   })
 
   if (!markets || markets.length === 0) return [] as MarketDTO[]
@@ -46,7 +46,6 @@ export async function getMarketsWithPrices(opts?: { take?: number }) {
     }
 
     const probability = yes != null ? Math.round(yes * 100) : null
-
     return {
       id: m.id,
       question: m.question ?? null,
@@ -56,6 +55,7 @@ export async function getMarketsWithPrices(opts?: { take?: number }) {
       updatedAt: m.updatedAt ?? null,
       yesPrice: yes,
       noPrice: no,
+      imageUrl: m.imageUrl ?? null,
       probability,
     }
   })

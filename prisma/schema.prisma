@@ -61,7 +61,7 @@ model Market {
   volume          Float?
   updatedAt       DateTime  @updatedAt
   createdAt       DateTime  @default(now())
-
+  imageUrl        String? 
   bets Bet[] // ✅ opposite relation for Bet.market
 }
 

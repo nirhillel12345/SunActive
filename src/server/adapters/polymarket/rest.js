@@ -48,6 +48,8 @@ export async function fetchMarkets() {
                 catch (e) {
                     console.error(`Failed to parse clobTokenIds for market ${m.id}`);
                 }
+                 const image = m.image || event.image || m.icon || event.icon || null;
+                 console.log(`Market ${m.id} - Extracted image: ${image ? 'Yes' : 'No'}`);
                 // 4. חישוב הסיכוי (Probability)
                 let rawPrice = null;
                 if (m.lastTradePrice && Number(m.lastTradePrice) > 0) {
@@ -72,6 +74,7 @@ export async function fetchMarkets() {
                         category: event.category || null,
                         closeTime: m.endDate || null,
                         resolved: false,
+                        imageUrl: image,
                         liquidity: Number(m.liquidityNum) || Number(m.liquidity) || 0,
                         volume: Number(m.volumeNum) || Number(m.volume) || 0,
                         probability: Math.round(rawPrice * 100),
@@ -87,6 +90,7 @@ export async function fetchMarkets() {
             console.table(allSpecificMarkets.slice(0, 15).map(m => ({
                 Question: m.question.substring(0, 40),
                 'Chance %': m.probability + '%',
+                HasImage: !!m.imageUrl,
                 YesToken: m.tokenYesId?.substring(0, 10) + '...',
                 NoToken: m.tokenNoId?.substring(0, 10) + '...'
             })));

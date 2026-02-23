@@ -25,6 +25,7 @@ export async function syncMarkets() {
                     volume: typeof m.volume === 'number' ? m.volume : (m.volume ? Number(m.volume) : null),
                     tokenYesId: m.tokenYesId ?? null,
                     tokenNoId: m.tokenNoId ?? null,
+                    imageUrl: m.imageUrl ?? null,
                 };
                 // Upsert by id
                 await tx.market.upsert({
