@@ -73,17 +73,17 @@ export default function MarketCard({ market }: { market: Market }) {
             {/* YES / NO Row */}
             <div className="flex items-center gap-3 mt-3">
 
-              <div className={`text-lg font-semibold ${percentColor}`}>
-                {percent}%
-              </div>
-
-              <div className="text-sm text-emerald-600 font-medium">
+             <div className="inline-flex items-center px-3 py-1 rounded-md bg-emerald-100">
+              <span className="text-sm font-semibold text-emerald-700">
                 Yes {yesPercent}%
-              </div>
+              </span>
+            </div>
 
-              <div className="text-sm text-rose-500 font-medium">
+              <div className="inline-flex items-center px-3 py-1 rounded-md bg-rose-100">
+              <span className="text-sm font-semibold text-rose-700">
                 No {noPercent}%
-              </div>
+              </span>
+            </div>
 
             </div>
 
