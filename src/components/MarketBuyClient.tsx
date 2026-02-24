@@ -13,6 +13,7 @@ export default function MarketBuyClient({ market, user, initialPrices }: any) {
   const [side, setSide] = useState<Outcome>("YES")
   const [amount, setAmount] = useState<number | "">("")
   const [loading, setLoading] = useState(false)
+  const [clientBalance, setClientBalance] = useState<number | null>(user?.balancePoints ?? null)
 
   // Live prices from WS/Redis (0..1)
   const [yesPrice, setYesPrice] = useState<number | null>(initialPrices?.yes ?? null)
@@ -104,6 +105,20 @@ export default function MarketBuyClient({ market, user, initialPrices }: any) {
           description: `Placed ${amount} pts on ${side}`,
         })
         setAmount("")
+        // Refresh balance from server and emit a global event so the header updates immediately
+        try {
+          const r = await fetch('/api/portfolio')
+          const j = await r.json()
+          const newBal = Number(j?.data?.user?.balancePoints ?? NaN)
+          if (!Number.isNaN(newBal)) {
+            window.dispatchEvent(new CustomEvent('user:balance', { detail: { balance: newBal } }))
+          } else {
+            window.dispatchEvent(new CustomEvent('user:balance:refresh'))
+          }
+        } catch (e) {
+          // best-effort: trigger refresh handler
+          window.dispatchEvent(new CustomEvent('user:balance:refresh'))
+        }
       }
     } catch {
       toast.push({ title: "Network error", type: "error" })
@@ -176,6 +191,41 @@ export default function MarketBuyClient({ market, user, initialPrices }: any) {
       } catch {}
     }
   }, [market?.id])
+
+  // Maintain a client-side balance that updates after bets without page refresh
+  useEffect(() => {
+    let mounted = true
+    async function fetchBal() {
+      try {
+        const res = await fetch('/api/portfolio')
+        const j = await res.json()
+        if (!mounted) return
+        const b = Number(j?.data?.user?.balancePoints ?? NaN)
+        if (!Number.isNaN(b)) setClientBalance(b)
+      } catch {
+        // ignore
+      }
+    }
+
+    fetchBal()
+
+    const handler = (ev: any) => {
+      try {
+        const b = Number(ev?.detail?.balance)
+        if (!Number.isNaN(b)) setClientBalance(b)
+      } catch {
+        fetchBal()
+      }
+    }
+
+    window.addEventListener('user:balance', handler as any)
+    window.addEventListener('user:balance:refresh', fetchBal as any)
+    return () => {
+      mounted = false
+      window.removeEventListener('user:balance', handler as any)
+      window.removeEventListener('user:balance:refresh', fetchBal as any)
+    }
+  }, [])
 
   // REST fallback to fetch current price once if WS not available yet (unchanged)
   useEffect(() => {
@@ -287,7 +337,7 @@ export default function MarketBuyClient({ market, user, initialPrices }: any) {
       <div className="mt-4">
         <div className="flex items-center justify-between">
           <label className="text-sm font-medium text-gray-700">Amount</label>
-          <div className="text-xs text-gray-400">Balance: {Number(user?.balancePoints ?? 0)}</div>
+          <div className="text-xs text-gray-400">Balance: {clientBalance != null ? clientBalance : Number(user?.balancePoints ?? 0)}</div>
         </div>
 
         <div className="mt-2 flex items-center justify-between rounded-xl border border-gray-200 bg-white px-3 py-2.5">

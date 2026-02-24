@@ -6,6 +6,7 @@ import MobileNav from '../components/MobileNav'
 import getSession from '@/server/auth/getSession'
 import { prisma } from '@/server/db/prisma'
 import UserMenu from '../components/UserMenu'
+import UserBalance from '@/components/UserBalance'
 import ToastProvider from '@/components/ui/ToastProvider'
 
 export const metadata = {
@@ -16,10 +17,10 @@ export const metadata = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession()
 
-  let user: { id: string; username?: string | null; email?: string | null; role?: string | null } | null = null
+  let user: { id: string; username?: string | null; email?: string | null; role?: string | null; balancePoints?: number | null } | null = null
   if ((session as any)?.user?.id) {
     const u = (await prisma.user.findUnique({ where: { id: String((session as any).user.id) } })) as any
-    if (u) user = { id: u.id, username: u.username, email: u.email, role: u.role }
+    if (u) user = { id: u.id, username: u.username, email: u.email, role: u.role , balancePoints: u.balancePoints ?? 0 }
   }
 
   return (
@@ -64,16 +65,27 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
           {/* Right content: allow vertical scrolling inside main */}
           <div className="flex-1 min-h-0 flex flex-col min-w-0">
-            <header className="flex items-center justify-between bg-white border-b p-4">
-              <div className="flex items-center gap-3 min-w-0">
-                <MobileNav user={user} />
-                <a href="/" className="text-lg font-bold">SunActive</a>
-                <div className="hidden sm:block">
+            <header className="bg-white border-b">
+              {/* Row 1: menu, title, usermenu - increased vertical padding on mobile */}
+              <div className="flex items-center justify-between px-4 py-3 md:py-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <MobileNav user={user} />
+                </div>
+
+                <div className="flex-1 text-center min-w-0">
+                  <a href="/" className="text-lg font-bold truncate">SunActive</a>
+                </div>
+
+                <div className="flex items-center flex-none gap-4">
+                  <UserBalance className="hidden md:flex items-center text-sm text-gray-700" />
+                  <UserMenu user={user} />
                 </div>
               </div>
 
-              <div>
-                <UserMenu user={user} />
+              {/* Row 2: mobile-only welcome + balance */}
+              <div className="px-4 py-2 border-t gap-2 flex items-center justify-between text-sm md:hidden">
+                <div className="truncate text-sm text-gray-700">{user?.username ? `Welcome back, ${user.username}` : 'Welcome'}</div>
+                <UserBalance className="text-sm text-gray-500 truncate" />
               </div>
             </header>
 
