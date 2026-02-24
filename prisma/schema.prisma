@@ -125,6 +125,7 @@ model Bet {
 
   @@index([userId])
   @@index([marketId])
+  @@index([status])
 }
 
 enum BetStatus {
