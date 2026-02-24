@@ -8,12 +8,21 @@ const redis_1 = require("@/server/redis");
  * Returns merged DTOs suitable for rendering on the Home page.
  */
 async function getMarketsWithPrices(opts) {
-    const take = opts?.take ?? 200;
-    const markets = await prisma_1.prisma.market.findMany({
-        orderBy: { updatedAt: 'desc' },
-        take,
-        select: { id: true, question: true, category: true, resolved: true, volume: true, updatedAt: true, imageUrl: true },
-    });
+  const take = opts?.take;
+    console.log('Fetching markets with prices, take=', take);
+  const markets = await prisma.market.findMany({
+    orderBy: { updatedAt: "desc" },
+    ...(typeof take === "number" ? { take } : {}),
+    select: {
+      id: true,
+      question: true,
+      category: true,
+      resolved: true,
+      volume: true,
+      updatedAt: true,
+      imageUrl: true,
+    },
+  });
     if (!markets || markets.length === 0)
         return [];
     const keys = markets.map((m) => (0, redis_1.snapshotKey)(m.id));

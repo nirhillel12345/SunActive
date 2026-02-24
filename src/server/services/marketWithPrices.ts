@@ -19,12 +19,20 @@ type MarketDTO = {
  * Returns merged DTOs suitable for rendering on the Home page.
  */
 export async function getMarketsWithPrices(opts?: { take?: number }) {
-  const take = opts?.take ?? 200
+  const take = opts?.take
 
   const markets = await prisma.market.findMany({
-    orderBy: { updatedAt: 'desc' },
-    take,
-    select: { id: true, question: true, category: true, resolved: true, volume: true, updatedAt: true, imageUrl: true },
+    orderBy: { updatedAt: "desc" },
+    ...(typeof take === "number" ? { take } : {}),
+    select: {
+      id: true,
+      question: true,
+      category: true,
+      resolved: true,
+      volume: true,
+      updatedAt: true,
+      imageUrl: true,
+    },
   })
 
   if (!markets || markets.length === 0) return [] as MarketDTO[]
